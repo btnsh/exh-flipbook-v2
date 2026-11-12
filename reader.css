@@ -1,0 +1,207 @@
+* { box-sizing: border-box; }
+:root { color-scheme: light; font-family: Arial, sans-serif; color: #36463c; background: #e9e7e0; }
+body { margin: 0; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; font-size: 14px; }
+#hint { margin: 0; height: 34px; padding-top: 13px; text-align: center; font-size: 11px; color: #7a8278; flex-shrink: 0; }
+.stage { flex: 1; min-height: 0; display: grid; place-items: center; padding: 12px 40px; touch-action: pan-y; overflow: hidden; }
+.book { position: relative; width: min(100%, calc((100dvh - 124px) * 1.414)); aspect-ratio: 1.414; perspective: 2400px; transform: translateX(0); }
+.book[data-position="front"] { transform: translateX(-25%); }
+.book[data-position="back"] { transform: translateX(25%); }
+.surface, .leaf { position: absolute; top: 0; width: 50%; height: 100%; }
+.surface { background: #fffdf7; box-shadow: 0 8px 20px #0002; overflow: hidden; }
+.left { left: 0; } .right { left: 50%; }
+.surface.empty { visibility: hidden; }
+img { display: block; width: 100%; height: 100%; object-fit: fill; user-select: none; -webkit-user-drag: none; }
+.spine { position: absolute; inset: 0 auto 0 50%; width: 14px; transform: translateX(-50%); background: linear-gradient(90deg,transparent,#0002,transparent); pointer-events: none; z-index: 2; }
+.book[data-position="front"] .spine, .book[data-position="back"] .spine { visibility: hidden; }
+.leaf { left: 50%; transform-origin: 0 50%; transform-style: preserve-3d; z-index: 3; visibility: hidden; pointer-events: none; }
+.book.turning .leaf { visibility: visible; will-change: transform; }
+.book.turning { will-change: transform; }
+.face { position: absolute; inset: 0; background: #fffdf7; backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; }
+.face.back { transform: rotateY(180deg); }
+.face::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg,#0002,transparent 22%); opacity: .5; pointer-events: none; }
+nav { display: flex; justify-content: center; align-items: center; gap: 18px; min-height: 66px; flex-shrink: 0; }
+button { font: inherit; border: 1px solid #bfc5bb; background: #f7f6f1; color: #354d3d; border-radius: 7px; padding: 10px 15px; cursor: pointer; touch-action: manipulation; }
+button:disabled { opacity: .3; cursor: default; } button:focus-visible { outline: 3px solid #779079; outline-offset: 3px; }
+#count { min-width: 125px; text-align: center; font-variant-numeric: tabular-nums; }
+#message { position: fixed; bottom: 65px; left: 10px; right: 10px; margin: 0; text-align: center; font-size: 12px; pointer-events: none; }
+.stage.zoomed { overflow: auto; place-items: start center; touch-action: pan-x pan-y; }
+.stage.zoomed .book { margin: 30px auto; zoom: 1.5; }
+@media (max-width: 600px) {
+ .stage { padding: 10px; }
+ .book { width: min(100%, calc((100dvh - 120px) * .707)); aspect-ratio: .707; }
+ .book[data-position] { transform: none; }
+ .surface, .leaf { width: 100%; left: 0; }
+ .surface.left, .spine { display: none; }
+ .leaf .back { display: none; }
+ nav { gap: 8px; } button { padding: 10px 13px; } #count { min-width: 100px; }
+}
+
+
+[hidden] { display: none !important; }
+.scene-controls { text-align: center; flex-shrink: 0; padding: 0 12px; }
+.scene-row { display: flex; justify-content: center; align-items: center; gap: 7px; flex-wrap: wrap; }
+.scene-row button { font-size: 12px; padding: 8px 11px; min-height: 36px; }
+#scene-label { font-size: 11px; color: #617264; margin-right: 7px; }
+#scene-status { font-size: 11px; color: #617264; margin: 7px 0; min-height: 13px; }
+#scene-notes { font-size: 11px; line-height: 1.5; color: #617264; }
+#scene-notes summary { cursor: pointer; margin: 0 auto 6px; width: fit-content; }
+#scene-notes[open] { max-height: 130px; overflow: auto; text-align: left; max-width: 650px; margin: auto; }
+#scene-notes p, #scene-notes ol { margin: 8px 4px; }
+body:has(#scene-controls:not([hidden])) .book { width: min(100%,calc((100dvh - 215px) * 1.414)); }
+.scene-cue { position: absolute; left: 83%; top: 7.5%; width: 44px; height: 44px; transform: translate(-50%,-50%); padding: 9px; border: 0; background: transparent; cursor: pointer; z-index: 5; }
+.scene-cue::before { content: ''; position: absolute; inset: 6px; background: #faf9f0ed; border: 1px solid #819484; border-radius: 50%; box-shadow: 0 1px 3px #0002; }
+.scene-cue svg { position: relative; width: 18px; height: 18px; fill: #365540; }
+.live-scene-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.book[data-scene="playing"] .live-foot { will-change: transform; }
+@media(max-width:600px) {
+ body:has(#scene-controls:not([hidden])) .book { width: min(100%,calc((100dvh - 242px) * .707)); }
+ #scene-label { flex-basis: 100%; margin: 0; }
+ .scene-row button { min-height: 40px; padding: 8px 10px; }
+ #scene-status { max-width: 355px; margin: 6px auto; line-height: 1.4; }
+}
+/* Reserve the scene-control slot while turning, so adding/removing it never resizes the book mid-turn. */
+.scene-controls { position: relative; height: 100px; }
+.scene-controls[hidden] { display: block !important; visibility: hidden; }
+.book, body:has(#scene-controls:not([hidden])) .book { width: min(100%,calc((100dvh - 230px) * 1.414)); }
+#scene-notes[open] { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); width: min(650px,calc(100vw - 30px)); max-height: 230px; background: #f7f6ef; border: 1px solid #bfc5bb; border-radius: 7px; padding: 12px; z-index: 10; box-shadow: 0 5px 15px #0002; }
+@media(max-width:600px) {
+ .scene-controls { height: 142px; }
+ .book, body:has(#scene-controls:not([hidden])) .book { width: min(100%,calc((100dvh - 272px) * .707)); }
+}
+/* All-page player: panel hit targets are transparent, labels and comic bitmap stay untouched. */
+.scene-controls { height: 116px; }
+.scene-row select { font: inherit; font-size: 12px; color: #365540; background: #f7f6f1; padding: 8px; border: 1px solid #bfc5bb; border-radius: 6px; min-height: 36px; }
+#scene-status { max-width: 850px; margin: 6px auto; font-size: 11px; line-height: 1.4; min-height: 30px; max-height: 34px; overflow: auto; }
+.panel-hit { position: absolute; z-index: 4; border: 0; padding: 0; border-radius: 0; background: transparent; cursor: pointer; touch-action: pan-y; min-width: 24px; min-height: 24px; }
+.panel-hit::after { content: '▶'; position: absolute; top: -8px; right: -2px; font-size: 9px; color: #365540; background: #faf9f0ed; border: 1px solid #93a18f; border-radius: 50%; width: 18px; height: 18px; display: grid; place-items: center; pointer-events: none; }
+.panel-hit.needs-art::after { content: '!'; color: #80682a; }
+.panel-hit:hover { background: #ffffff07; }
+.panel-hit:focus-visible { outline: 2px solid #547956; outline-offset: 2px; }
+.panel-hit[aria-pressed="true"] { outline: 2px solid #6c9675; outline-offset: -2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.live-scene-overlay { pointer-events: none; z-index: 3; }
+.inventory-unit { text-align: left; font-size: 12px; border: 0; background: transparent; padding: 5px 0; text-decoration: underline; }
+#scene-inventory { padding-left: 18px; margin: 5px; } #scene-inventory li p { margin: 1px 0 8px; font-size: 11px; }
+.book, body:has(#scene-controls:not([hidden])) .book { width: min(100%,calc((100dvh - 248px) * 1.414)); }
+@media(max-width:600px) {
+ .scene-controls { height: 170px; }
+ .scene-row { gap: 5px; }
+ #scene-label { flex-basis: auto; font-size: 10px; margin: 0; }
+ .scene-row select { min-height: 32px; padding: 5px; }
+ .scene-row button { font-size: 11px; min-height: 40px; padding: 7px 9px; }
+ #scene-status { min-height: 42px; max-height: 44px; }
+ .book, body:has(#scene-controls:not([hidden])) .book { width: min(100%,calc((100dvh - 300px) * .707)); }
+}
+/* Reading zoom enlarges the actual book instead of shrinking it back to fit. */
+.stage.zoomed { display: block; overflow: auto; }
+body:has(#scene-controls) .stage.zoomed .book { width: 160%; max-width: none; margin: 20px 0; zoom: 1; }
+.stage.zoomed .panel-hit { touch-action: pan-x pan-y; }
+
+/* The confirmed handbook uses the full reader stage and a direct PDF link. */
+.handbook-reader .stage { container-type: size; }
+.handbook-reader .book {
+  width: min(100%, calc(100cqh * 1.40952));
+  aspect-ratio: 1.40952;
+}
+.handbook-reader img { object-fit: contain; }
+.handbook-reader .stage.zoomed .book { width: 150%; margin: 20px 0; zoom: 1; }
+.download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 8px 13px;
+  border: 1px solid #bfc5bb;
+  border-radius: 7px;
+  color: #354d3d;
+  background: #f7f6f1;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.download:focus-visible { outline: 3px solid #779079; outline-offset: 3px; }
+@media (max-width: 600px) {
+  .handbook-reader .book { width: min(100%, calc(100cqh * .70476)); aspect-ratio: .70476; }
+  .handbook-reader nav { gap: 6px; padding: 6px; flex-wrap: wrap; }
+  .handbook-reader #count { min-width: 54px; }
+  .handbook-reader nav button, .download { min-height: 44px; }
+  .handbook-reader nav button { min-width: 44px; padding: 8px; }
+  .download { padding-inline: 9px; }
+}
+
+/* Fullscreen keeps the same reader and controls in the viewport. */
+body.fullscreen-fallback { position: fixed; inset: 0; z-index: 20; }
+.handbook-reader.fullscreen-fallback nav,
+:fullscreen .handbook-reader nav {
+  padding-bottom: max(6px, env(safe-area-inset-bottom));
+}
+.handbook-reader .stage.zoomed .book {
+  width: calc(100% * var(--reading-zoom, 1.5));
+}
+@media (max-width: 600px) {
+  .handbook-reader .book {
+    width: min(100%, calc(100cqh * 1.40952));
+    aspect-ratio: 1.40952;
+    perspective: 1400px;
+  }
+  .handbook-reader .book[data-position="front"] { transform: translateX(-25%); }
+  .handbook-reader .book[data-position="back"] { transform: translateX(25%); }
+  .handbook-reader .surface, .handbook-reader .leaf { width: 50%; }
+  .handbook-reader .right, .handbook-reader .leaf { left: 50%; }
+  .handbook-reader .surface.left, .handbook-reader .spine,
+  .handbook-reader .leaf .back { display: block; }
+}
+
+.handbook-reader.fullscreen-fallback #hint,
+:fullscreen .handbook-reader #hint { display: none; }
+.handbook-reader.fullscreen-fallback .stage,
+:fullscreen .handbook-reader .stage { padding: 4px; }
+
+.reader-spread {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  position: relative;
+  container-type: size;
+  --gutter: 40px;
+  --vertical-pad: 12px;
+}
+.reader-spread .stage {
+  margin-inline: var(--gutter);
+  min-width: 0;
+  padding: var(--vertical-pad) 0;
+}
+.handbook-reader.fullscreen-fallback .reader-spread,
+:fullscreen .reader-spread { --vertical-pad: 4px; }
+.handbook-reader.fullscreen-fallback .reader-spread .stage,
+:fullscreen .handbook-reader .reader-spread .stage { padding: var(--vertical-pad) 0; }
+@media (max-width: 600px) {
+  .reader-spread { --vertical-pad: 10px; --gutter: 10px; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 1000px) {
+  .handbook-reader #hint { display: none; }
+  .reader-spread { --vertical-pad: 2px; --gutter: 8px; }
+  .handbook-reader nav { min-height: 0; gap: 8px; padding: 2px 6px max(2px, env(safe-area-inset-bottom)); }
+  .handbook-reader nav button, .handbook-reader .download { min-height: 44px; padding: 6px 12px; }
+}
+
+
+.handbook-reader .book.turning { perspective: var(--curl-perspective, 2400px); }
+.book.turning .leaf.curling { will-change: auto; }
+.leaf, .paper-strip { -webkit-transform-style: preserve-3d; }
+.leaf.curling > .face { visibility: hidden; }
+.paper-strip {
+  position: absolute;
+  inset: 0 auto 0 0;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+}
+.paper-strip .face {
+  background-repeat: no-repeat;
+}
+.paper-strip {
+  --paper-shade: linear-gradient(90deg, rgb(32 22 12 / 9%), transparent 65%);
+}
+.paper-strip .front { background-image: var(--paper-shade), var(--curl-front); }
+.paper-strip .back { background-image: var(--paper-shade), var(--curl-back); }
+.paper-strip .face::after { content: none; }
+.leaf:not(.curling) .paper-strip { visibility: hidden; }

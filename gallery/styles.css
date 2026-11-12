@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #e9e7e0;
+  --color-primary: #202820;
+  --color-primary-foreground: #fff;
+  --color-secondary: #deded3;
+  --color-secondary-foreground: #202820;
+  --color-accent: #d6ddcf;
+  --color-accent-foreground: #202820;
+  --color-destructive: #a42142;
+  --color-destructive-foreground: #fff;
+  --color-input: #747b6f;
+  --color-ring: #416647;
+}
+
+html,
+body {
+  background-color: var(--color-background);
+  color: var(--color-primary);
+}
+
+.photo-stack {
+  --photo-size: clamp(70px, 22vw, 220px);
+  width: var(--photo-size);
+  height: var(--photo-size);
+}
+
+.gallery-grid {
+  background-image:
+    linear-gradient(to right, #57534e 1px, transparent 1px),
+    linear-gradient(to bottom, #57534e 1px, transparent 1px);
+  background-size: 3rem 3rem;
+  mask-image: radial-gradient(ellipse 65% 95% at 50% 0%, #000 30%, transparent 85%);
+}
+
+.gallery-title {
+  font-family: "vinyl", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.gallery-subtitle,
+.gallery-flipbook-link {
+  font-family: "dm-sans", "DM Sans", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}

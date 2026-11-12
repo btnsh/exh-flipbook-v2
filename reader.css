@@ -205,3 +205,14 @@ body.fullscreen-fallback { position: fixed; inset: 0; z-index: 20; }
 .paper-strip .back { background-image: var(--paper-shade), var(--curl-back); }
 .paper-strip .face::after { content: none; }
 .leaf:not(.curling) .paper-strip { visibility: hidden; }
+
+.gallery-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: 8px;
+  color: inherit;
+  font-size: 0.875rem;
+  text-underline-offset: 0.2em;
+}
+.gallery-link:focus-visible { outline: 3px solid #779079; outline-offset: 3px; }

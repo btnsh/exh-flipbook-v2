@@ -219,8 +219,11 @@
         ? sheetWidth || leaf.getBoundingClientRect().width : 0;
       leaf.classList.toggle('curling', width > 0);
       book.classList.add('turning');
-      const timing = {duration: reduceMotion.matches ? 0 : single ? 360 : width > 0 ? 700 : 520,
-        easing: 'cubic-bezier(.32,.05,.24,1)', fill: 'both'};
+      const timing = {
+        duration: reduceMotion.matches ? 0 : 700,
+        easing: 'cubic-bezier(0.25, 0.85, 0.35, 1)',
+        fill: 'both',
+      };
       const turnFrames = [{transform: `rotateY(${from}deg)`}, {transform: `rotateY(${to}deg)`}];
       if (single) {
         turnFrames[0].opacity = direction > 0 ? 1 : 0;

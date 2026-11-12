@@ -21,6 +21,23 @@ img { display: block; width: 100%; height: 100%; object-fit: fill; user-select: 
 .face.back { transform: rotateY(180deg); }
 .face::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg,#0002,transparent 22%); opacity: .5; pointer-events: none; }
 .handbook-reader .face::after { content: none; }
+.handbook-reader .book.turning { perspective: var(--curl-perspective, none); }
+.book.turning .leaf.curling { will-change: auto; }
+.leaf.curling > .face { visibility: hidden; }
+.leaf:not(.curling) > .paper-strip { display: none; }
+.paper-strip {
+  position: absolute;
+  inset: 0 auto 0 0;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  will-change: transform;
+  --paper-shade: linear-gradient(90deg, rgb(32 22 12 / 9%), transparent 65%);
+}
+.turning-left .paper-strip { inset: 0 0 0 auto; transform-origin: right center; }
+.paper-strip .face { background-repeat: no-repeat; }
+.paper-strip .front { background-image: var(--paper-shade), var(--curl-front); }
+.paper-strip .back { background-image: var(--paper-shade), var(--curl-back); }
 nav { display: flex; justify-content: center; align-items: center; gap: 18px; min-height: 66px; flex-shrink: 0; }
 button { font: inherit; border: 1px solid #bfc5bb; background: #f7f6f1; color: #354d3d; border-radius: 7px; padding: 10px 15px; cursor: pointer; touch-action: manipulation; }
 button:disabled { opacity: .3; cursor: default; } button:focus-visible { outline: 3px solid #779079; outline-offset: 3px; }

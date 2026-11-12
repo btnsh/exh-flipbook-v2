@@ -80,7 +80,10 @@
     put('left', left); put('right', right);
     book.dataset.position = position(current);
     book.classList.remove('turning');
-    leaf.classList.remove('turning-left');
+    leaf.classList.remove('turning-left', 'curling');
+    leaf.style.removeProperty('--curl-front');
+    leaf.style.removeProperty('--curl-back');
+    book.style.removeProperty('--curl-perspective');
     leaf.style.transform = ''; leaf.style.opacity = '';
     // Release obsolete face references after the hidden leaf leaves the compositor.
     put('front', null); put('back', null);
@@ -122,6 +125,65 @@
       book.dataset.performance = JSON.stringify(window.flipbookDiagnostics);
     };
   }
+  // Divide the sheet into hinged slices, starting at the spine in either direction.
+  const stripCount = 8;
+  const strips = spreadReader ? Array.from({length: stripCount}, () => {
+    const strip = document.createElement('div');
+    strip.className = 'paper-strip';
+    strip.style.width = `${100 / stripCount}%`;
+    for (const side of ['front', 'back']) {
+      const face = document.createElement('div');
+      face.className = `face ${side}`;
+      face.style.backgroundSize = `${stripCount * 100}% 100%, ${stripCount * 100}% 100%`;
+      strip.append(face);
+    }
+    leaf.append(strip);
+    return strip;
+  }) : [];
+
+  let cachedCurl;
+  function curlFrames(width) {
+    if (cachedCurl?.width === width) return cachedCurl;
+    const right = strips.map(() => []);
+    const left = strips.map(() => []);
+    const stripWidth = width / stripCount;
+    for (let step = 0; step <= 24; step++) {
+      const progress = step / 24;
+      const bend = Math.sin(Math.PI * progress) * 1.35;
+      let x = 0, z = 0;
+      for (let index = 0; index < stripCount; index++) {
+        const angle = -Math.PI * progress + bend * (.5 - index / (stripCount - 1));
+        const scale = index === stripCount - 1 ? 1 : 1 + .75 / stripWidth;
+        right[index].push({transform: `translate3d(${x}px, 0, ${z}px) rotateY(${angle}rad) scaleX(${scale})`});
+        left[index].push({transform: `translate3d(${-x}px, 0, ${z}px) rotateY(${-angle}rad) scaleX(${scale})`});
+        x += stripWidth * Math.cos(angle);
+        z -= stripWidth * Math.sin(angle);
+      }
+    }
+    return cachedCurl = {width, right, left};
+  }
+
+  let sheetWidth = 0;
+  if (spreadReader && typeof ResizeObserver === 'function') {
+    new ResizeObserver(([entry]) => {
+      sheetWidth = entry.contentRect.width;
+      if (sheetWidth > 0) curlFrames(sheetWidth);
+    }).observe(leaf);
+  }
+
+  function curl(forward, width, timing) {
+    const frames = curlFrames(width)[forward ? 'right' : 'left'];
+    book.style.setProperty('--curl-perspective', `${width * 4.4}px`);
+    leaf.style.setProperty('--curl-front', `url("${slots.front.src}")`);
+    leaf.style.setProperty('--curl-back', `url("${slots.back.src}")`);
+    return strips.map((strip, index) => {
+      const progress = index / (stripCount - 1) * 100;
+      strip.children[0].style.backgroundPositionX = `${forward ? progress : 100 - progress}%`;
+      strip.children[1].style.backgroundPositionX = `${forward ? 100 - progress : progress}%`;
+      return strip.animate(frames[index], timing);
+    });
+  }
+
   async function turn(direction) {
     if (!ready) return;
     if (busy) return;
@@ -153,16 +215,18 @@
       }
       const from = single && !forward ? -100 : 0;
       const to = single ? (forward ? -100 : 0) : (forward ? -180 : 180);
+      const width = spreadReader && !reduceMotion.matches && !document.hidden
+        ? sheetWidth || leaf.getBoundingClientRect().width : 0;
+      leaf.classList.toggle('curling', width > 0);
       book.classList.add('turning');
-      const timing = {duration: reduceMotion.matches ? 0 : single ? 360 : 520,
-        easing: 'cubic-bezier(.4,0,.3,1)', fill: 'both'};
+      const timing = {duration: reduceMotion.matches ? 0 : single ? 360 : width > 0 ? 700 : 520,
+        easing: 'cubic-bezier(.32,.05,.24,1)', fill: 'both'};
       const turnFrames = [{transform: `rotateY(${from}deg)`}, {transform: `rotateY(${to}deg)`}];
       if (single) {
         turnFrames[0].opacity = direction > 0 ? 1 : 0;
         turnFrames[1].opacity = direction > 0 ? 0 : 1;
       }
-      // Animate one two-sided sheet. The static spread is already decoded.
-      activeAnimations = [leaf.animate(turnFrames, timing)];
+      activeAnimations = width > 0 ? curl(forward, width, timing) : [leaf.animate(turnFrames, timing)];
       if (!single && translation(current) !== translation(target)) {
         activeAnimations.push(book.animate([{transform: translation(current)}, {transform: translation(target)}], timing));
       }

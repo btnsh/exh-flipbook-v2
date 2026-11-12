@@ -138,13 +138,20 @@ body:has(#scene-controls) .stage.zoomed .book { width: 160%; max-width: none; ma
   white-space: nowrap;
 }
 .download:focus-visible { outline: 3px solid #779079; outline-offset: 3px; }
+.download-icon { display: none; }
 @media (max-width: 600px) {
   .handbook-reader .book { width: min(100%, calc(100cqh * .70476)); aspect-ratio: .70476; }
   .handbook-reader nav { gap: 6px; padding: 6px; flex-wrap: wrap; }
   .handbook-reader #count { min-width: 54px; }
-  .handbook-reader nav button, .download { min-height: 44px; }
-  .handbook-reader nav button { min-width: 44px; padding: 8px; }
-  .download { padding-inline: 9px; }
+  .handbook-reader nav button, .download { min-width: 44px; min-height: 44px; padding: 8px; }
+  .download-label { display: none; }
+  .download-icon {
+    display: block;
+    width: 18px;
+    height: 18px;
+    background-color: #59645f;
+    mask: url("reader-icons/download.png") center / contain no-repeat;
+  }
 }
 
 /* Fullscreen keeps the same reader and controls in the viewport. */

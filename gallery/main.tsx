@@ -37,6 +37,7 @@ function openReader(event: ReactMouseEvent<HTMLAnchorElement>) {
 function closeReader(event: MouseEvent) {
   if (!isPlainClick(event)) return;
   event.preventDefault();
+  reader.contentDocument?.querySelector<HTMLButtonElement>('#full[aria-pressed="true"]')?.click();
   if (history.state?.galleryOpenedReader) {
     history.back();
   } else {
@@ -46,7 +47,8 @@ function closeReader(event: MouseEvent) {
 }
 
 function bindReaderControls() {
-  reader.contentDocument?.querySelector<HTMLAnchorElement>(".gallery-link")?.addEventListener("click", closeReader);
+  reader.contentDocument?.querySelectorAll<HTMLAnchorElement>("[data-close-reader]")
+    .forEach(link => link.addEventListener("click", closeReader));
 }
 
 reader.addEventListener("load", bindReaderControls);

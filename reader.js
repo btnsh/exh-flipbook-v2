@@ -220,7 +220,7 @@
       leaf.classList.toggle('curling', width > 0);
       book.classList.add('turning');
       const timing = {
-        duration: reduceMotion.matches ? 0 : 700,
+        duration: reduceMotion.matches ? 0 : 1150,
         easing: 'cubic-bezier(0.25, 0.85, 0.35, 1)',
         fill: 'both',
       };

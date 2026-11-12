@@ -6,6 +6,7 @@ const readerFiles = [
   "handbook.js",
   "reader.js",
   "reader.css",
+  "reader-icons",
   "handbook-pages",
   "EXH Programme Handbook.pdf",
 ];

@@ -221,8 +221,22 @@ body.fullscreen-fallback { position: fixed; inset: 0; z-index: 20; }
   text-decoration: none;
   border-radius: 7px;
 }
-.reader-home { grid-column: 1; justify-self: start; gap: 5px; color: inherit; }
-.reader-home:hover { background: #f7f6f1; }
+.reader-home { grid-column: 1; justify-self: start; color: #6d28d9; }
+.reader-home:hover { color: #5b21b6; background: #f7f6f1; }
 .gallery-link { grid-column: 3; grid-row: 1; justify-self: end; color: #6d28d9; }
 .gallery-link:hover { color: #5b21b6; }
 .reader-home:focus-visible, .gallery-link:focus-visible { outline: 2px solid #6d28d9; outline-offset: 2px; }
+.reader-link-icon { display: none; }
+@media (max-width: 600px) {
+  .reader-home, .gallery-link { min-width: 44px; justify-content: center; }
+  .reader-link-label { display: none; }
+  .reader-link-icon {
+    display: block;
+    width: 22px;
+    height: 22px;
+    background: currentColor;
+    mask: var(--reader-icon) center / contain no-repeat;
+  }
+  .reader-home { --reader-icon: url("reader-icons/home.png"); }
+  .gallery-link { --reader-icon: url("reader-icons/gallery.png"); }
+}

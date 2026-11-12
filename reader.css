@@ -3,7 +3,7 @@
 body { margin: 0; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; font-size: 14px; }
 #hint { margin: 0; height: 34px; padding-top: 13px; text-align: center; font-size: 11px; color: #7a8278; flex-shrink: 0; }
 .stage { flex: 1; min-height: 0; display: grid; place-items: center; padding: 12px 40px; touch-action: pan-y; overflow: hidden; }
-.book { position: relative; width: min(100%, calc((100dvh - 124px) * 1.414)); aspect-ratio: 1.414; perspective: 2400px; transform: translateX(0); }
+.book { position: relative; width: min(100%, calc((100dvh - 124px) * 1.414)); aspect-ratio: 1.414; transform: translateX(0); }
 .book[data-position="front"] { transform: translateX(-25%); }
 .book[data-position="back"] { transform: translateX(25%); }
 .surface, .leaf { position: absolute; top: 0; width: 50%; height: 100%; }
@@ -13,12 +13,14 @@ body { margin: 0; height: 100dvh; display: flex; flex-direction: column; overflo
 img { display: block; width: 100%; height: 100%; object-fit: fill; user-select: none; -webkit-user-drag: none; }
 .spine { position: absolute; inset: 0 auto 0 50%; width: 14px; transform: translateX(-50%); background: linear-gradient(90deg,transparent,#0002,transparent); pointer-events: none; z-index: 2; }
 .book[data-position="front"] .spine, .book[data-position="back"] .spine { visibility: hidden; }
-.leaf { left: 50%; transform-origin: 0 50%; transform-style: preserve-3d; z-index: 3; visibility: hidden; pointer-events: none; }
-.book.turning .leaf { visibility: visible; will-change: transform, opacity; }
-.book.turning { will-change: transform, opacity; }
+.leaf { left: 50%; transform-origin: 0 50%; transform-style: preserve-3d; -webkit-transform-style: preserve-3d; z-index: 3; visibility: hidden; pointer-events: none; }
+.book .leaf.turning-left { left: 0; transform-origin: right center; }
+.book.turning .leaf { visibility: visible; will-change: transform; }
+.book.turning { will-change: transform; }
 .face { position: absolute; inset: 0; background: #fffdf7; backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; }
 .face.back { transform: rotateY(180deg); }
 .face::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg,#0002,transparent 22%); opacity: .5; pointer-events: none; }
+.handbook-reader .face::after { content: none; }
 nav { display: flex; justify-content: center; align-items: center; gap: 18px; min-height: 66px; flex-shrink: 0; }
 button { font: inherit; border: 1px solid #bfc5bb; background: #f7f6f1; color: #354d3d; border-radius: 7px; padding: 10px 15px; cursor: pointer; touch-action: manipulation; }
 button:disabled { opacity: .3; cursor: default; } button:focus-visible { outline: 3px solid #779079; outline-offset: 3px; }
@@ -141,7 +143,6 @@ body.fullscreen-fallback { position: fixed; inset: 0; z-index: 20; }
   .handbook-reader .book {
     width: min(100%, calc(100cqh * 1.40952));
     aspect-ratio: 1.40952;
-    perspective: 1400px;
   }
   .handbook-reader .book[data-position="front"] { transform: translateX(-25%); }
   .handbook-reader .book[data-position="back"] { transform: translateX(25%); }
@@ -184,28 +185,6 @@ body.fullscreen-fallback { position: fixed; inset: 0; z-index: 20; }
   .handbook-reader nav button, .handbook-reader .download { min-height: 44px; padding: 6px 12px; }
 }
 
-
-.handbook-reader .book.turning { perspective: var(--curl-perspective, 2400px); }
-.book.turning .leaf.curling { will-change: auto; }
-.leaf, .paper-strip { -webkit-transform-style: preserve-3d; }
-.leaf.curling > .face { visibility: hidden; }
-.paper-strip {
-  position: absolute;
-  inset: 0 auto 0 0;
-  transform-origin: left center;
-  transform-style: preserve-3d;
-}
-.paper-strip .face {
-  background-repeat: no-repeat;
-}
-.paper-strip {
-  --paper-shade: linear-gradient(90deg, rgb(32 22 12 / 9%), transparent 65%);
-}
-.paper-strip .front { background-image: var(--paper-shade), var(--curl-front); }
-.paper-strip .back { background-image: var(--paper-shade), var(--curl-back); }
-.paper-strip .face::after { content: none; }
-.leaf:not(.curling) .paper-strip { visibility: hidden; }
-.leaf.curling .paper-strip { will-change: transform, opacity; }
 
 .gallery-link {
   display: inline-flex;

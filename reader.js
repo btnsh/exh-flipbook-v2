@@ -80,12 +80,7 @@
     put('left', left); put('right', right);
     book.dataset.position = position(current);
     book.classList.remove('turning');
-    if (leaf.classList.contains('curling')) {
-      leaf.classList.remove('curling');
-      leaf.style.removeProperty('--curl-front');
-      leaf.style.removeProperty('--curl-back');
-      book.style.removeProperty('--curl-perspective');
-    }
+    leaf.classList.remove('turning-left');
     leaf.style.transform = ''; leaf.style.opacity = '';
     // Release obsolete face references after the hidden leaf leaves the compositor.
     put('front', null); put('back', null);
@@ -127,68 +122,6 @@
       book.dataset.performance = JSON.stringify(window.flipbookDiagnostics);
     };
   }
-  // Bend one sheet across the spine using reusable strips. Each strip carries
-  // matching slices of the front and back artwork, with the back in reverse order.
-  const stripCount = 8;
-  const strips = spreadReader ? Array.from({length: stripCount}, (_, index) => {
-    const strip = document.createElement('div');
-    strip.className = 'paper-strip';
-    strip.style.width = `${100 / stripCount}%`;
-    for (const [side, slice] of [['front', index], ['back', stripCount - 1 - index]]) {
-      const face = document.createElement('div');
-      face.className = `face ${side}`;
-      face.style.backgroundSize = `${stripCount * 100}% 100%, ${stripCount * 100}% 100%`;
-      face.style.backgroundPositionX = `${slice / (stripCount - 1) * 100}%`;
-      strip.append(face);
-    }
-    leaf.append(strip);
-    return strip;
-  }) : [];
-
-  let cachedCurl;
-  function curlFrames(width) {
-    if (cachedCurl?.width === width) return cachedCurl;
-    const forward = strips.map(() => []);
-    const stripWidth = width / stripCount;
-    // Cover subpixel gaps where the browser rasterizes adjacent 3D edges separately.
-    const seamScale = 1 + 0.75 / stripWidth;
-    // Each slice starts at the previous slice's edge as the sheet bends.
-    for (let step = 0; step <= 24; step++) {
-      const progress = step / 24;
-      const bend = Math.sin(Math.PI * progress) * 1.35;
-      let x = 0, z = 0;
-      for (let index = 0; index < stripCount; index++) {
-        const angle = -Math.PI * progress + bend * (.5 - index / (stripCount - 1));
-        const scale = index === stripCount - 1 ? 1 : seamScale;
-        forward[index].push({transform: `translate3d(${x}px, 0, ${z}px) rotateY(${angle}rad) scaleX(${scale})`});
-        x += stripWidth * Math.cos(angle);
-        z -= stripWidth * Math.sin(angle);
-      }
-    }
-    cachedCurl = {width, forward, backward: forward.map(frames => frames.slice().reverse())};
-    return cachedCurl;
-  }
-
-  if (spreadReader && typeof ResizeObserver === 'function') {
-    // Refresh geometry when the page changes size, before the next gesture.
-    new ResizeObserver(([entry]) => {
-      const width = entry.contentRect.width;
-      if (width > 0 && !busy) curlFrames(width);
-    }).observe(leaf);
-  }
-
-  function curl(direction, timing) {
-    const width = leaf.getBoundingClientRect().width;
-    const {forward, backward} = curlFrames(width);
-    // Keep the projected depth relative to the sheet size across screen widths.
-    book.style.setProperty('--curl-perspective', `${width * 4.4}px`);
-    const frames = direction > 0 ? forward : backward;
-    leaf.style.setProperty('--curl-front', `url("${slots.front.src}")`);
-    leaf.style.setProperty('--curl-back', `url("${slots.back.src}")`);
-    leaf.classList.add('curling');
-    return strips.map((strip, index) => strip.animate(frames[index], timing));
-  }
-
   async function turn(direction) {
     if (!ready) return;
     if (busy) return;
@@ -198,6 +131,9 @@
     mediaState(true);
     const token = revision;
     const old = pages(current), next = pages(target);
+    const forward = direction > 0;
+    const landingSlot = forward ? 'left' : 'right';
+    const landingPage = next[forward ? 0 : 1];
     let stopMeasure = () => {};
     try {
       await Promise.all([...new Set([...old, ...next])].map(decode));
@@ -206,54 +142,39 @@
         put('front', direction > 0 ? old[1] : next[1]);
         put('back', null);
         put('right', direction > 0 ? next[1] : old[1]);
-      } else if (direction > 0) {
-        put('front', old[1]); put('back', next[0]);
-        put('left', old[0]); put('right', next[1]);
       } else {
-        put('front', next[1]); put('back', old[0]);
-        put('left', next[0]); put('right', old[1]);
+        put('front', old[forward ? 1 : 0]);
+        put('back', landingPage);
+        await Promise.all([slots.front, slots.back].filter(image => !image.hidden).map(image => image.decode()));
+        if (token !== revision) return;
+        put('left', forward ? old[0] : next[0]);
+        put('right', forward ? next[1] : old[1]);
+        leaf.classList.toggle('turning-left', !forward);
       }
-      const from = single ? (direction > 0 ? 0 : -100) : (direction > 0 ? 0 : -180);
-      const to = single ? (direction > 0 ? -100 : 0) : (direction > 0 ? -180 : 0);
+      const from = single && !forward ? -100 : 0;
+      const to = single ? (forward ? -100 : 0) : (forward ? -180 : 180);
       book.classList.add('turning');
-      const timing = {duration: reduceMotion.matches ? 0 : single ? 360 : spreadReader ? 700 : 460,
-        easing: 'cubic-bezier(.32,.05,.24,1)', fill: 'both'};
+      const timing = {duration: reduceMotion.matches ? 0 : single ? 360 : 520,
+        easing: 'cubic-bezier(.4,0,.3,1)', fill: 'both'};
       const turnFrames = [{transform: `rotateY(${from}deg)`}, {transform: `rotateY(${to}deg)`}];
       if (single) {
         turnFrames[0].opacity = direction > 0 ? 1 : 0;
         turnFrames[1].opacity = direction > 0 ? 0 : 1;
       }
-      const useCurl = spreadReader && !reduceMotion.matches && !document.hidden;
-      activeAnimations = useCurl ? curl(direction, timing) : [leaf.animate(turnFrames, timing)];
+      // Animate one two-sided sheet. The static spread is already decoded.
+      activeAnimations = [leaf.animate(turnFrames, timing)];
       if (!single && translation(current) !== translation(target)) {
         activeAnimations.push(book.animate([{transform: translation(current)}, {transform: translation(target)}], timing));
-      }
-      if (useCurl) {
-        // Paint the first pose before starting the shared animation clock.
-        // A timeout also releases this wait if the tab is backgrounded.
-        activeAnimations.forEach(animation => {
-          animation.pause();
-          animation.currentTime = 0;
-        });
-        await new Promise(resolve => {
-          let secondFrame;
-          const finish = () => {
-            cancelAnimationFrame(firstFrame);
-            if (secondFrame !== undefined) cancelAnimationFrame(secondFrame);
-            clearTimeout(timeout);
-            resolve();
-          };
-          const firstFrame = requestAnimationFrame(() => { secondFrame = requestAnimationFrame(finish); });
-          const timeout = setTimeout(finish, 70);
-        });
-        if (token !== revision) return;
-        activeAnimations.forEach(animation => {
-          if (animation.playState !== 'finished') animation.play();
-        });
       }
       stopMeasure = measure();
       await Promise.all(activeAnimations.map(animation => animation.finished));
       if (token !== revision) return;
+      // Hold the finished sheet over its matching static page until that image is ready.
+      if (!single && landingPage !== null) {
+        put(landingSlot, landingPage);
+        await slots[landingSlot].decode();
+        if (token !== revision) return;
+      }
       current = target;
       $('message').textContent = '';
     } catch (error) {

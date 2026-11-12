@@ -94,6 +94,10 @@
   }
   function prefetch() {
     const wanted = new Set(pages(current).filter(n => n !== null));
+    // Warm the cover and opening pages while the gallery's reader is still hidden.
+    if (current === 0) {
+      for (let index = 1; index < Math.min(4, TOTAL); index++) wanted.add(index);
+    }
     for (const direction of [-1, 1]) {
       const target = destination(direction);
       if (target !== null) pages(target).forEach(n => { if (n !== null) wanted.add(n); });
@@ -392,7 +396,11 @@
   });
   async function start() {
     try {
-      await Promise.all(pages(current).map(decode)); ready = true; settle(); prefetch();
+      if (current === 0) prefetch();
+      await Promise.all(pages(current).map(decode));
+      ready = true;
+      settle();
+      if (current !== 0) prefetch();
     } catch { $('message').textContent = 'The handbook could not load. Please reload to try again.'; }
   }
   start();

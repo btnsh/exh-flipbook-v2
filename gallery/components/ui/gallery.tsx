@@ -1,4 +1,5 @@
 import { motion, useReducedMotion } from "framer-motion";
+import type { MouseEventHandler } from "react";
 
 const photos = [
   { file: "1.png", alt: "A waving child in a green cap", x: "-145%", y: "7%", tilt: -3 },
@@ -8,15 +9,14 @@ const photos = [
   { file: "5.png", alt: "A waving child wearing sunglasses and holding a white cane", x: "145%", y: "20%", tilt: -2 },
 ];
 
-export function PhotoGallery({ animationDelay = 0.5 }: { animationDelay?: number }) {
+export function PhotoGallery({ animationDelay = 0.5, onOpen }: {
+  animationDelay?: number;
+  onOpen: MouseEventHandler<HTMLAnchorElement>;
+}) {
   const reduceMotion = useReducedMotion();
 
   return (
-    <section aria-labelledby="gallery-title" className="relative isolate w-full text-center">
-      <div
-        aria-hidden="true"
-        className="gallery-grid pointer-events-none absolute inset-x-0 top-36 -z-10 hidden h-72 opacity-20 md:block"
-      />
+    <section aria-labelledby="gallery-title" className="w-full text-center">
       <div className="px-4 pt-8 sm:px-8 md:pt-12 md:pb-4">
         <h1 id="gallery-title" className="gallery-title mx-auto max-w-sm text-balance text-[clamp(2.5rem,10vw,3.5rem)] leading-[1.02] tracking-tight text-[#5f2d75] md:max-w-full md:text-[min(7.3vw,7.25rem)] md:whitespace-nowrap">
           New Everyday Life, By Design
@@ -54,6 +54,7 @@ export function PhotoGallery({ animationDelay = 0.5 }: { animationDelay?: number
 
       <a
         href="../"
+        onClick={onOpen}
         className="gallery-flipbook-link group inline-flex min-h-11 items-center gap-2 rounded-md px-3 text-lg text-[#5f2d75] focus-visible:outline-2 focus-visible:outline-offset-2"
       >
         <span className="underline decoration-1 underline-offset-4">Open the flipbook</span>

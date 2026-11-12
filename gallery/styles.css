@@ -70,3 +70,75 @@ html:has(.gallery-reader.is-open) {
   font-weight: 400;
   font-style: normal;
 }
+
+.character-card {
+  --card-angle: var(--card-tilt);
+  --card-scale: 1;
+  --card-greeting: 0;
+}
+
+.character-card-button {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: pan-y;
+  cursor: pointer;
+  border-radius: 17%;
+  transform: rotate(var(--card-angle)) scale(var(--card-scale));
+  transition: transform 250ms cubic-bezier(.22, 1, .36, 1);
+}
+
+.character-card-button:focus-visible {
+  outline: 2px solid #5f2d75;
+  outline-offset: 4px;
+}
+
+.character-card-button::before {
+  position: absolute;
+  inset: 7% 4% 4%;
+  border-radius: 17%;
+  box-shadow: 0 10px 20px rgb(27 19 31 / 28%);
+  opacity: var(--card-greeting);
+  transition: opacity 250ms ease;
+  content: "";
+  pointer-events: none;
+}
+
+.character-card-art {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+
+.character-wave-patch {
+  position: absolute;
+  pointer-events: none;
+}
+
+.character-card:has(:focus-visible) { z-index: 19; }
+
+.character-card[data-active="true"] {
+  z-index: 20;
+  --card-angle: calc(var(--card-tilt) / 3);
+  --card-scale: 1.06;
+  --card-greeting: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .character-card[data-hovered="true"] {
+    z-index: 21;
+    --card-angle: calc(var(--card-tilt) / 3);
+    --card-scale: 1.06;
+    --card-greeting: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .character-card-button { transform: rotate(var(--card-tilt)); }
+  .character-card-button, .character-card-button::before { transition: none; }
+}
+

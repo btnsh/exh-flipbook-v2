@@ -1,12 +1,13 @@
 import { motion, useReducedMotion } from "framer-motion";
-import type { MouseEventHandler } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type MouseEventHandler } from "react";
+import { WavingCharacter, type HandBounds } from "./waving-character";
 
 const photos = [
-  { file: "1.png", alt: "A waving child in a green cap", x: "-145%", y: "7%", tilt: -3 },
-  { file: "2.png", alt: "A waving child in a pink sweater", x: "-73%", y: "15%", tilt: -2 },
-  { file: "3.png", alt: "A waving child using a wheelchair", x: "0%", y: "4%", tilt: 2 },
-  { file: "4.png", alt: "A waving child in a blue and white shirt", x: "73%", y: "10%", tilt: 3 },
-  { file: "5.png", alt: "A waving child wearing sunglasses and holding a white cane", x: "145%", y: "20%", tilt: -2 },
+  { file: "1.png", alt: "A waving child in a green cap", x: "-145%", y: "7%", tilt: -3, hand: [231, 200, 352, 313] satisfies HandBounds },
+  { file: "2.png", alt: "A waving child in a pink sweater", x: "-73%", y: "15%", tilt: -2, hand: [548, 227, 659, 327] satisfies HandBounds },
+  { file: "3.png", alt: "A waving child using a wheelchair", x: "0%", y: "4%", tilt: 2, hand: [245, 290, 360, 410] satisfies HandBounds },
+  { file: "4.png", alt: "A waving child in a blue and white shirt", x: "73%", y: "10%", tilt: 3, hand: [549, 219, 664, 328] satisfies HandBounds },
+  { file: "5.png", alt: "A waving child wearing sunglasses and holding a white cane", x: "145%", y: "20%", tilt: -2, hand: [550, 265, 666, 374] satisfies HandBounds },
 ];
 
 export function PhotoGallery({ animationDelay = 0.5, onOpen }: {
@@ -14,6 +15,25 @@ export function PhotoGallery({ animationDelay = 0.5, onOpen }: {
   onOpen: MouseEventHandler<HTMLAnchorElement>;
 }) {
   const reduceMotion = useReducedMotion();
+  const stack = useRef<HTMLDivElement>(null);
+  const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null);
+  const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (activeCardIndex === null) return;
+    const dismissOutside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !stack.current?.contains(event.target)) setActiveCardIndex(null);
+    };
+    const dismissOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActiveCardIndex(null);
+    };
+    document.addEventListener("pointerdown", dismissOutside);
+    document.addEventListener("keydown", dismissOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", dismissOutside);
+      document.removeEventListener("keydown", dismissOnEscape);
+    };
+  }, [activeCardIndex]);
 
   return (
     <section aria-labelledby="gallery-title" className="w-full text-center">
@@ -32,11 +52,16 @@ export function PhotoGallery({ animationDelay = 0.5, onOpen }: {
         animate={{ opacity: 1 }}
         transition={{ delay: reduceMotion ? 0 : animationDelay, duration: reduceMotion ? 0 : 0.4 }}
       >
-        <div className="photo-stack relative">
-          {photos.map(({ file, alt, x, y, tilt }, index) => (
+        <div ref={stack} className="photo-stack relative">
+          {photos.map(({ file, alt, x, y, tilt, hand }, index) => (
             <motion.div
               key={file}
-              className="absolute inset-0 hover:z-20"
+              className="character-card absolute inset-0"
+              data-active={activeCardIndex === index}
+              data-hovered={hoveredCardIndex === index}
+              style={{
+                "--card-tilt": tilt + "deg",
+              } as CSSProperties}
               initial={reduceMotion ? false : { x: "0%", y: "0%" }}
               animate={{ x, y }}
               transition={reduceMotion ? { duration: 0 } : {
@@ -46,7 +71,31 @@ export function PhotoGallery({ animationDelay = 0.5, onOpen }: {
                 delay: animationDelay + 0.4 + index * 0.15,
               }}
             >
-              <Photo file={file} alt={alt} tilt={tilt} reduceMotion={Boolean(reduceMotion)} />
+              <button
+                type="button"
+                className="character-card-button"
+                aria-label={alt + ". Wave hi"}
+                aria-pressed={activeCardIndex === index}
+                onPointerEnter={event => {
+                  if (event.pointerType === "mouse" && matchMedia("(hover: hover) and (pointer: fine)").matches) {
+                    setHoveredCardIndex(index);
+                    setActiveCardIndex(null);
+                  }
+                }}
+                onPointerLeave={() => setHoveredCardIndex(current => current === index ? null : current)}
+                onClick={event => {
+                  if (event.detail > 0 && event.nativeEvent instanceof PointerEvent &&
+                      event.nativeEvent.pointerType === "mouse" && hoveredCardIndex === index) return;
+                  setHoveredCardIndex(null);
+                  setActiveCardIndex(current => current === index ? null : index);
+                }}
+              >
+                <WavingCharacter
+                  src={import.meta.env.BASE_URL + "photos/" + file}
+                  hand={hand}
+                  waving={!reduceMotion && (hoveredCardIndex === index || activeCardIndex === index)}
+                />
+              </button>
             </motion.div>
           ))}
         </div>
@@ -64,31 +113,3 @@ export function PhotoGallery({ animationDelay = 0.5, onOpen }: {
   );
 }
 
-function Photo({ file, alt, tilt, reduceMotion }: {
-  file: string;
-  alt: string;
-  tilt: number;
-  reduceMotion: boolean;
-}) {
-  return (
-    <motion.div
-      drag={reduceMotion ? false : "x"}
-      dragConstraints={{ left: 0, right: 0 }}
-      dragMomentum={false}
-      initial={false}
-      animate={{ rotate: tilt }}
-      whileHover={reduceMotion ? undefined : { scale: 1.1, rotate: tilt * 1.5 }}
-      whileTap={reduceMotion ? undefined : { scale: 1.12 }}
-      className="relative aspect-square w-full touch-pan-y drop-shadow-md motion-safe:cursor-grab motion-safe:active:cursor-grabbing"
-    >
-      <img
-        src={`${import.meta.env.BASE_URL}photos/${file}`}
-        alt={alt}
-        width={220}
-        height={220}
-        draggable={false}
-        className="h-full w-full select-none object-contain"
-      />
-    </motion.div>
-  );
-}

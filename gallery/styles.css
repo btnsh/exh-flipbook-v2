@@ -31,7 +31,10 @@ body {
     linear-gradient(to right, #57534e 1px, transparent 1px),
     linear-gradient(to bottom, #57534e 1px, transparent 1px);
   background-size: 3rem 3rem;
-  mask-image: radial-gradient(ellipse 65% 95% at 50% 0%, #000 30%, transparent 85%);
+  mask-image:
+    linear-gradient(to bottom, transparent, #000 3rem),
+    radial-gradient(ellipse 65% 95% at 50% 0%, #000 30%, transparent 85%);
+  mask-composite: intersect;
 }
 
 .gallery-title {

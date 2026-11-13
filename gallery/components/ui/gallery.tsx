@@ -42,7 +42,7 @@ export function PhotoGallery({ animationDelay = 0.5, onOpen }: {
           New Everyday Life, By Design
         </h1>
         <p className="gallery-subtitle mt-4 inline-block translate-y-4 rounded-xl bg-[#e287b1] px-5 py-2 text-[1.2rem]/[1.83rem] text-[#5f2d75] md:mt-5 md:translate-y-[1.875rem] md:px-6 md:text-[1.55rem]/[2.43rem]">
-          Guide to an Inclusive Train Exhibition
+          Your Guide to an Inclusive Carriage
         </p>
       </div>
 

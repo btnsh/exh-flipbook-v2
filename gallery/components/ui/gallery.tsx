@@ -38,10 +38,10 @@ export function PhotoGallery({ animationDelay = 0.5, onOpen }: {
   return (
     <section aria-labelledby="gallery-title" className="w-full text-center">
       <div className="px-4 pt-8 sm:px-8 md:pt-12 md:pb-4">
-        <h1 id="gallery-title" className="gallery-title mx-auto max-w-sm text-balance text-[clamp(2.5rem,10vw,3.5rem)] leading-[1.02] tracking-tight text-[#5f2d75] md:max-w-full md:text-[min(7.3vw,7.25rem)] md:whitespace-nowrap">
+        <h1 id="gallery-title" className="gallery-title mx-auto max-w-sm text-balance text-[clamp(2.75rem,11.5vw,4rem)] leading-[1.02] tracking-tight text-[#5f2d75] md:max-w-full md:text-[min(7.3vw,7.25rem)] md:whitespace-nowrap">
           New Everyday Life, By Design
         </h1>
-        <p className="gallery-subtitle mt-4 inline-block translate-y-4 rounded-xl bg-[#e287b1] px-5 py-2 text-[1.2rem]/[1.83rem] text-[#5f2d75] md:mt-5 md:translate-y-[1.875rem] md:px-6 md:text-[1.55rem]/[2.43rem]">
+        <p className="gallery-subtitle mt-4 inline-block translate-y-4 rounded-xl bg-[#e287b1] px-5 py-2 text-[1rem]/[1.45rem] text-[#5f2d75] md:mt-5 md:translate-y-[1.875rem] md:px-6 md:text-[1.55rem]/[2.43rem]">
           Your Guide to an Inclusive Carriage
         </p>
       </div>
